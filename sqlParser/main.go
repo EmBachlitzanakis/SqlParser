@@ -82,6 +82,7 @@ func (t *Tokenizer) NextToken() Token {
 type Parser struct {
 	tokenizer *Tokenizer
 	current   Token
+	err       error
 }
 
 func NewParser(input string) *Parser {
@@ -93,10 +94,15 @@ func (p *Parser) read() {
 	p.current = p.tokenizer.NextToken()
 }
 
-func (p *Parser) Parse() {
+func (p *Parser) reportError(message string) {
+	p.err = fmt.Errorf("%s at position %d", message, p.tokenizer.pos)
+}
+
+func (p *Parser) Parse() error {
 	p.read()
 	if p.current.Type != TokenSelect {
-		panic("expected SELECT")
+		p.reportError("expected SELECT keyword")
+		return p.err
 	}
 	fmt.Println("Parsed: SELECT")
 
@@ -112,19 +118,31 @@ func (p *Parser) Parse() {
 	}
 
 	if p.current.Type != TokenFrom {
-		panic("expected FROM")
+		p.reportError("expected FROM keyword")
+		return p.err
 	}
 	fmt.Println("Parsed: FROM")
 
 	p.read()
 	if p.current.Type != TokenIdentifier {
-		panic("expected table name")
+		p.reportError("expected table name")
+		return p.err
 	}
 	fmt.Printf("Parsed table name: %s\n", p.current.Value)
+
+	return nil
 }
 
 func main() {
 	input := "SELECT name, age FROM users"
 	parser := NewParser(input)
 	parser.Parse()
+
+	fmt.Printf("\n")
+	input = "SELECT name, age users" // Missing FROM keyword
+	parser = NewParser(input)
+	err := parser.Parse()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
 }
