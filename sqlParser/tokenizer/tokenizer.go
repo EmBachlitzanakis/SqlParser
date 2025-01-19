@@ -51,6 +51,7 @@ func (t *Tokenizer) Pos() int {
 }
 
 func (t *Tokenizer) NextToken() Token {
+	// Skip all consecutive whitespace characters efficiently
 	for unicode.IsSpace(t.current) {
 		t.read()
 	}
